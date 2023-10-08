@@ -178,7 +178,10 @@ const int MS_PER_CYCLE = 10000;		// 10000 milliseconds = 10 seconds
 int		ActiveButton;			// current button that is down
 GLuint	AxesList;				// list to hold the axes
 int		AxesOn;					// != 0 means to draw the axes
-GLuint	BoxList;				// object display list
+GLuint	colatz_1;				// object display list
+GLuint	colatz_2;				// object display list
+GLuint	colatz_3;				// object display list
+GLuint	colatz_4;				// object display list
 int		DebugOn;				// != 0 means to print debugging info
 int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn;			// != 0 means to use the z-buffer
@@ -441,11 +444,18 @@ Display( )
 	// since we are using glScalef( ), be sure the normals get unitized:
 
 	glEnable( GL_NORMALIZE );
+	glScalef(0.25, 0.25, 0.25);
 
+	glCallList(colatz_1);
 
-	// draw the box object by calling up its display list:
+	glRotatef(90, 1, 0, 0);
+	glCallList(colatz_2);
 
-	glCallList( BoxList );
+	glRotatef(90, 0, 1, 0);
+	glCallList(colatz_3);
+
+	glRotatef(90, 0, 0, 1);
+	glCallList(colatz_4);
 
 #ifdef DEMO_Z_FIGHTING
 	if( DepthFightingOn != 0 )
@@ -806,6 +816,76 @@ InitGraphics( )
 
 }
 
+int new_colatz_num(int x) {
+	if (x % 2 == 0) {
+		return x / 2;
+	}
+	else { return 3 * x + 1; }
+}
+
+void create_quad(int n, int z) {
+	glVertex3f(n + 1, n + 1, z);
+	glVertex3f(n - 1, n + 1, z);
+	glVertex3f(n - 1, n - 1, z);
+	glVertex3f(n + 1, n - 1, z);
+}
+
+GLuint create_colatz_quad(int start_num) {
+	int n = start_num;
+	GLuint new_list = glGenLists(1);
+	glNewList(new_list, GL_COMPILE);
+	glBegin(GL_QUADS);
+
+	// Determine number of steps to 1
+	int steps = 0;
+	int fake_n = n;
+	while (fake_n != 1) {
+		fake_n = new_colatz_num(fake_n);
+		steps++;
+	}
+
+	// Create initial quad
+	create_quad(n, steps);
+
+	do {
+		int old_n = n;
+		n = new_colatz_num(n); // Get next position
+		steps--;
+
+		// Create quad at target
+		create_quad(n, steps);
+
+		// left side
+		glVertex3f(old_n - 1, old_n + 1, steps+1);
+		glVertex3f(old_n - 1, old_n - 1, steps+1);
+		glVertex3f(n - 1, n - 1, steps);
+		glVertex3f(n - 1, n + 1, steps);
+
+		// right side
+		glVertex3f(old_n + 1, old_n + 1, steps+1);
+		glVertex3f(old_n + 1, old_n - 1, steps+1);
+		glVertex3f(n + 1, n - 1, steps);
+		glVertex3f(n + 1, n + 1, steps);
+
+		// top side
+		glVertex3f(old_n + 1, old_n + 1, steps+1);
+		glVertex3f(old_n - 1, old_n + 1, steps+1);
+		glVertex3f(n - 1, n + 1, steps);
+		glVertex3f(n + 1, n + 1, steps);
+
+		// bottom side
+		glVertex3f(old_n + 1, old_n - 1, steps+1);
+		glVertex3f(old_n - 1, old_n - 1, steps+1);
+		glVertex3f(n - 1, n - 1, steps);
+		glVertex3f(n + 1, n - 1, steps);
+
+	} while (steps > 0);
+
+	glEnd();
+	glEndList();
+
+	return new_list;
+}
 
 // initialize the display lists that will not change:
 // (a display list is a way to store opengl commands in
@@ -818,64 +898,12 @@ InitLists( )
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting InitLists.\n");
 
-	float dx = BOXSIZE / 2.f;
-	float dy = BOXSIZE / 2.f;
-	float dz = BOXSIZE / 2.f;
 	glutSetWindow( MainWindow );
 
-	// create the object:
-
-	BoxList = glGenLists( 1 );
-	glNewList( BoxList, GL_COMPILE );
-
-		glBegin( GL_QUADS );
-
-			glColor3f( 1., 0., 0. );
-
-				glNormal3f( 1., 0., 0. );
-					glVertex3f(  dx, -dy,  dz );
-					glVertex3f(  dx, -dy, -dz );
-					glVertex3f(  dx,  dy, -dz );
-					glVertex3f(  dx,  dy,  dz );
-
-				glNormal3f(-1., 0., 0.);
-					glVertex3f( -dx, -dy,  dz);
-					glVertex3f( -dx,  dy,  dz );
-					glVertex3f( -dx,  dy, -dz );
-					glVertex3f( -dx, -dy, -dz );
-
-			glColor3f( 0., 1., 0. );
-
-				glNormal3f(0., 1., 0.);
-					glVertex3f( -dx,  dy,  dz );
-					glVertex3f(  dx,  dy,  dz );
-					glVertex3f(  dx,  dy, -dz );
-					glVertex3f( -dx,  dy, -dz );
-
-				glNormal3f(0., -1., 0.);
-					glVertex3f( -dx, -dy,  dz);
-					glVertex3f( -dx, -dy, -dz );
-					glVertex3f(  dx, -dy, -dz );
-					glVertex3f(  dx, -dy,  dz );
-
-			glColor3f(0., 0., 1.);
-
-				glNormal3f(0., 0., 1.);
-					glVertex3f(-dx, -dy, dz);
-					glVertex3f( dx, -dy, dz);
-					glVertex3f( dx,  dy, dz);
-					glVertex3f(-dx,  dy, dz);
-
-				glNormal3f(0., 0., -1.);
-					glVertex3f(-dx, -dy, -dz);
-					glVertex3f(-dx,  dy, -dz);
-					glVertex3f( dx,  dy, -dz);
-					glVertex3f( dx, -dy, -dz);
-
-		glEnd( );
-
-	glEndList( );
-
+	colatz_1 = create_colatz_quad(85);
+	colatz_2 = create_colatz_quad(23);
+	colatz_3 = create_colatz_quad(24);
+	colatz_4 = create_colatz_quad(25);
 
 	// create the axes:
 
