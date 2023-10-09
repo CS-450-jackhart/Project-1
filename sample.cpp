@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -43,7 +44,7 @@
 
 // title of these windows:
 
-const char *WINDOWTITLE = "Straw Hat Crew -- Jack Hart";
+const char *WINDOWTITLE = "Collatz conjecture -- Jack Hart";
 const char *GLUITITLE   = "User Interface Window";
 
 // what the glui package defines as true and false:
@@ -182,6 +183,11 @@ GLuint	colatz_1;				// object display list
 GLuint	colatz_2;				// object display list
 GLuint	colatz_3;				// object display list
 GLuint	colatz_4;				// object display list
+GLuint	colatz_5;				// object display list
+int		colatz_angle_2;			// Angle of rotation for this colatz viz
+int		colatz_angle_3;			// Angle of rotation for this colatz viz
+int		colatz_angle_4;			// Angle of rotation for this colatz viz
+int		colatz_angle_5;			// Angle of rotation for this colatz viz
 int		DebugOn;				// != 0 means to print debugging info
 int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn;			// != 0 means to use the z-buffer
@@ -289,6 +295,11 @@ MulArray3(float factor, float a, float b, float c )
 int
 main( int argc, char *argv[ ] )
 {
+	srand(time(NULL));
+	colatz_angle_2 = rand() % 358 + 1;
+	colatz_angle_3 = rand() % 358 + 1;
+	colatz_angle_4 = rand() % 358 + 1;
+
 	// turn on the glut package:
 	// (do this before checking argc and argv since glutInit might
 	// pull some command line arguments out)
@@ -448,14 +459,17 @@ Display( )
 
 	glCallList(colatz_1);
 
-	glRotatef(90, 1, 0, 0);
+	glRotatef(colatz_angle_2, 1, 0, 0);
 	glCallList(colatz_2);
 
-	glRotatef(90, 0, 1, 0);
+	glRotatef(colatz_angle_3, 0, 1, 0);
 	glCallList(colatz_3);
 
-	glRotatef(90, 0, 0, 1);
+	glRotatef(colatz_angle_4, 0, 0, 1);
 	glCallList(colatz_4);
+
+	glRotatef(colatz_angle_5, 1, 1, 1);
+	glCallList(colatz_5);
 
 #ifdef DEMO_Z_FIGHTING
 	if( DepthFightingOn != 0 )
@@ -844,6 +858,11 @@ GLuint create_colatz_quad(int start_num) {
 		steps++;
 	}
 
+	double r = (double)(rand() % 254 + 1) / 255;
+	double g = (double)(rand() % 254 + 1) / 255;
+	double b = (double)(rand() % 254 + 1) / 255;
+	glColor3f(r, g, b);
+
 	// Create initial quad
 	create_quad(n, steps);
 
@@ -900,10 +919,11 @@ InitLists( )
 
 	glutSetWindow( MainWindow );
 
-	colatz_1 = create_colatz_quad(85);
-	colatz_2 = create_colatz_quad(23);
-	colatz_3 = create_colatz_quad(24);
-	colatz_4 = create_colatz_quad(25);
+	colatz_1 = create_colatz_quad(rand() % 50 + 1);
+	colatz_2 = create_colatz_quad(rand() % 50 + 1);
+	colatz_3 = create_colatz_quad(rand() % 50 + 1);
+	colatz_4 = create_colatz_quad(rand() % 50 + 1);
+	colatz_5 = create_colatz_quad(rand() % 50 + 1);
 
 	// create the axes:
 
